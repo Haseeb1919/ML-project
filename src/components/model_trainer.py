@@ -26,6 +26,8 @@ from src.exception import CustomException
 from src.utils import save_object, evaluate_models
 
 
+
+
 @dataclass
 class ModelTrainerConfig:
     trained_model_file_path=os.path.join("artifacts","model.pkl")
@@ -36,16 +38,26 @@ class ModelTrainer:
         self.model_trainer_config=ModelTrainerConfig()
 
 
-    def initiate_model_trainer(self,train_array,test_array,preprocessor_path):
+    def initiate_model_trainer(self,data_array):
         try:
             logging.info("Initiating the model training process")
             logging.info("Splitting the data into train and test")
-            X_train, X_test, y_train, y_test =(
-                train_array[:,:-1],
-                train_array[:,-1],
-                test_array[:,:-1],
-                test_array[:,-1]
-            )
+            
+            # Split data into features (X) and target (y)
+            X = data_array[:, :-1]
+            y = data_array[:, -1]
+            # Split the data into train and test sets
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+
+
+            # Verify the shapes of train_array and test_array
+            print("Shape of X_train:", X_train.shape)
+            print("Shape of y_train:", y_train.shape)
+            print("Shape of X_test:", X_test.shape)
+            print("Shape of y_test:", y_test.shape)
+
 
 
             models = {
@@ -66,21 +78,20 @@ class ModelTrainer:
 
             
             #finding the best model
-            best_model_name = max(sorted(model_report.key()))
+            best_model_score = max(sorted(model_report.values()))
             
             best_model_name = list(model_report.keys())[
-                list(model_report.values()).index(best_model_name)]
+                list(model_report.values()).index(best_model_score)]
 
             best_model= models[best_model_name]
             
             #making a threshold for the best model
             if best_model_score< 0.8:
-                raise CustomException("The best model is not performing well",sys)
-
-            logging.info(f"Best model is {best_model}")
+                raise CustomException("No best best model found")
+            logging.info(f"Best found model on both training and testing dataset")
+            # logging.info(f"Best model is {best_model}")
 
             #save the best model
-
             save_object(
                 file_path=self.model_trainer_config.trained_model_file_path,obj=best_model)
             
@@ -93,3 +104,4 @@ class ModelTrainer:
 
         except Exception as e:
             raise CustomException(e,sys)
+ 
